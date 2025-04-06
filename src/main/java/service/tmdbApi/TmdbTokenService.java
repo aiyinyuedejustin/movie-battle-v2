@@ -2,6 +2,7 @@ package service.tmdbApi;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import utils.HttpUtil;
 
@@ -14,17 +15,14 @@ import java.util.Map;
 @Slf4j
 public class TmdbTokenService {
     private static final String TMDB_API_KEY = "b66be751fa2a2b0abc87f18e1767150d";
-    private static final String TMDB_ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiJ9" +
-            ".eyJhdWQiOiJiNjZiZTc1MWZhMmEyYjBhYmM4N2YxOGUxNzY3MTUwZCIsIm5iZiI6MTc0Mzk0MzQxMi4wMzAwMDAyLCJzdWIiOiI2N2YyNzZmNDJmN2Q0MzcwMjc5OWQ2ZjIiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.kVps53qR3qYXbmakBAH4XVd0QIJdmMvBHLMBUgoH_3o";
-    private static String baseUrl = "https://api.themoviedb.org/3";
-    private static String authUrl = baseUrl + "/authentication/token/new";
-
+    private static final String TMDB_ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJiNjZiZTc1MWZhMmEyYjBhYmM4N2YxOGUxNzY3MTUwZCIsIm5iZiI6MTc0Mzk0MzQxMi4wMzAwMDAyLCJzdWIiOiI2N2YyNzZmNDJmN2Q0MzcwMjc5OWQ2ZjIiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.kVps53qR3qYXbmakBAH4XVd0QIJdmMvBHLMBUgoH_3o";
     /**
+     * -- GETTER --
      * 获取基础URL
      */
-    public static String getBaseUrl() {
-        return baseUrl;
-    }
+    @Getter
+    private static String baseUrl = "https://api.themoviedb.org/3";
+    private static String authUrl = baseUrl + "/authentication/token/new";
 
     /**
      * 设置基础URL（仅用于测试）

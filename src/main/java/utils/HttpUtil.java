@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class HttpUtil {
     // 增加超时时间到30秒
-    private static final OkHttpClient client = new OkHttpClient.Builder()
+    private static final OkHttpClient HTTP_CLIENT = new OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
@@ -24,7 +24,7 @@ public class HttpUtil {
             .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 7890)))
             .build();
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /**
      * 发送GET请求
@@ -40,7 +40,7 @@ public class HttpUtil {
             headers.forEach(requestBuilder::addHeader);
         }
         Request request = requestBuilder.build();
-        try (Response response = client
+        try (Response response = HTTP_CLIENT
                 .newCall(request)
                 .execute()) {
             if (!response.isSuccessful()) {
@@ -72,15 +72,18 @@ public class HttpUtil {
             headers.forEach(requestBuilder::addHeader);
         }
         Request request = requestBuilder.build();
-        try (Response response = client
+        try (Response response = HTTP_CLIENT
                 .newCall(request)
                 .execute()) {
             if (!response.isSuccessful()) {
                 throw new IOException("Unexpected code " + response);
             }
-            String responseBody = response
-                    .body()
-                    .string();
+            String responseBody = null;
+            if (response.body() != null) {
+                responseBody = response
+                        .body()
+                        .string();
+            }
             log.debug("POST请求响应: {}", responseBody);
             return responseBody;
         }
@@ -94,7 +97,7 @@ public class HttpUtil {
      * @return 转换后的对象
      */
     public static <T> T fromJson(String json, Class<T> clazz) throws IOException {
-        return objectMapper.readValue(json, clazz);
+        return OBJECT_MAPPER.readValue(json, clazz);
     }
 
     /**
@@ -104,6 +107,21 @@ public class HttpUtil {
      * @return JSON字符串
      */
     public static String toJson(Object object) throws IOException {
-        return objectMapper.writeValueAsString(object);
+        return OBJECT_MAPPER.writeValueAsString(object);
+    }
+
+    /**
+     * URL编码
+     *
+     * @param value 需要编码的字符串
+     * @return 编码后的字符串
+     */
+    public static String urlEncode(String value) {
+        try {
+            return java.net.URLEncoder.encode(value, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException e) {
+            log.error("URL编码异常", e);
+            return value;
+        }
     }
 }
