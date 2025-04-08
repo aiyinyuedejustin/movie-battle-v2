@@ -1,126 +1,125 @@
-# 电影对战游戏系统架构文档
+# Movie Battle Game System Project Documentation
 
 > gaoyukun-data-v1
 
-## 1. MovieDataService的作用和方法
+## 1. MovieDataService's functions and methods
 
-`MovieDataService`是系统的核心接口，负责提供游戏所需的所有电影数据相关功能。具体功能包括：
+`MovieDataService is the core interface of the system, responsible for providing all movie data related functions required by the game. Specific functions include：
 
-### 电影数据获取
-- `getInitialMoviesList()`: 获取初始电影列表（Top 5000热门电影）
-- `getRandomStarterMovie()`: 获取随机起始电影，作为游戏开始点
-- `searchMoviesByPrefix(String prefix)`: 根据前缀搜索电影，支持玩家输入
-- `getMovieById(int movieId)`: 根据ID获取电影详情
+### Movie data acquisition
+- `getInitialMoviesList()`: Get the initial movie list (Top 5000 popular movies)
+- `getRandomStarterMovie()`: Get a random starting movie as the starting point of the game
+- `searchMoviesByPrefix(String prefix)`: Search movies by prefix, support player input
+- `getMovieById(int movieId)`: Get movie details by ID
 
-### 电影连接验证
-- `validateConnection(Movie previousMovie, Movie currentMovie)`: 验证两部电影之间是否存在有效连接
-- `getConnections(Movie previousMovie, Movie currentMovie)`: 获取两部电影之间的所有连接（共同演员、导演、编剧）
+### Movie connection validation
+- `validateConnection(Movie previousMovie, Movie currentMovie)`: Verify if there is a valid connection between two movies
+- `getConnections(Movie previousMovie, Movie currentMovie)`: Get all connections between two movies (common actors, directors, writers)
 
-### 游戏规则管理
-- `isConnectionUsedThreeTimes(Connection connection, GameSession session)`: 检查连接是否已被使用三次
-- `isMovieAlreadyUsed(Movie movie, GameSession session)`: 检查电影是否已在游戏中使用
-- `matchesWinCondition(Movie movie, WinCondition condition)`: 检查电影是否满足胜利条件（类型、演员、导演、编剧）
+### Game rules management
+- `isConnectionUsedThreeTimes(Connection connection, GameSession session)`: Check if the connection has been used three times
+- `isMovieAlreadyUsed(Movie movie, GameSession session)`: Check if the movie has been used in the game
+- `matchesWinCondition(Movie movie, WinCondition condition)`: Check if the movie meets the victory conditions (type, actor, director, screenwriter)
 
-### 游戏状态更新
-- `registerUsedMovie(Movie movie, GameSession session)`: 注册已使用的电影
-- `registerUsedConnection(Connection connection, GameSession session)`: 注册已使用的连接
+### Game status update
+- `registerUsedMovie(Movie movie, GameSession session)`: Register the used movie
+- `registerUsedConnection(Connection connection, GameSession session)`: Register the used connection
 
-### 系统初始化
-- `initializeDataIndexes()`: 初始化数据索引，为快速查询做准备
+### System initialization
+- `initializeDataIndexes()`: Initialize data indexes to prepare for fast query
 
-## 2. 各个类的关系及调用方式
+## 2. Relationships and calling methods of each class
 
-### 核心服务类及其关系
+### Core service classes and their relationships
 
 1. **MovieDataServiceImpl**
-   - 实现`MovieDataService`接口，是系统的主要业务逻辑实现
-   - 使用单例模式，通过`getInstance()`方法获取实例
-   - 依赖`MovieIndexService`进行电影数据检索和缓存
-   - 依赖`MovieGenreService`进行电影类型匹配
-   - 调用`TMDBMovieCacheService`获取初始电影列表
+   - Implements the `MovieDataService` interface, which is the main business logic implementation of the system
+   - Uses the singleton mode and obtains the instance through the `getInstance()` method
+   - Relies on `MovieIndexService` for movie data retrieval and caching
+   - Relies on `MovieGenreService` for movie type matching
+   - Calls `TMDBMovieCacheService` to obtain the initial movie list
 
    ```java
-   // 获取服务实例
+   // Get service instance
    MovieDataService movieService = MovieDataServiceImpl.getInstance();
    
-   // 搜索电影
+   // Search movies
    List<Movie> results = movieService.searchMoviesByPrefix("星际");
    
-   // 检查电影连接
+   // Check movie connection
    boolean isValid = movieService.validateConnection(movie1, movie2);
    ```
 
 2. **MovieIndexService**
-   - 负责构建和维护电影的多种索引，提供快速查询功能
-   - 管理电影标题前缀索引、ID索引、演员索引和导演索引
-   - 缓存电影详情和演职人员信息，减少API调用
-   - 调用`TMDBApiService`获取未缓存的电影数据
+   - Responsible for building and maintaining multiple indexes of movies, providing fast query function
+   - Manage movie title prefix index, ID index, actor index and director index
+   - Cache movie details and cast information to reduce API calls
+   - Call `TMDBApiService` to obtain uncached movie data
 
    ```java
-   // 通过MovieDataService间接使用
+   // Indirect use through MovieDataService
    Movie movie = movieService.getMovieById(123);
    
-   // 也可直接使用（不推荐）
+   // Can also be used directly (not recommended)
    MovieIndexService indexService = MovieIndexService.getInstance();
    List<Movie> actorMovies = indexService.getMoviesByActor(actorId);
    ```
 
 3. **MovieGenreService**
-   - 负责管理电影类型的映射关系
-   - 提供类型ID到名称、名称到ID的双向映射
-   - 调用`TMDBApiService`获取电影类型列表
-   - 提供`hasGenre`方法判断电影是否属于指定类型
+   - Responsible for managing the mapping relationship of movie genres
+   - Provides bidirectional mapping from genre ID to name and name to ID
+   - Calls `TMDBApiService` to obtain a list of movie genres
+   - Provides `hasGenre` method to determine whether a movie belongs to a specified genre
 
    ```java
-   // 通过MovieDataService间接使用（在matchesWinCondition方法中）
+   // Indirect use through MovieDataService (in matchesWinCondition method)
    boolean matches = movieService.matchesWinCondition(movie, genreCondition);
    
-   // 也可直接使用（不推荐）
+   // Can also be used directly (not recommended)）
    MovieGenreService genreService = MovieGenreService.getInstance();
    boolean hasAction = genreService.hasGenre(movie.getGenreIds(), "动作");
    ```
 
 4. **TMDBApiService**
-   - 封装TMDB API的原始请求
-   - 提供电影搜索、获取电影详情、获取演职人员和获取类型列表等方法
-   - 被其他服务类调用，很少直接使用
+   - Encapsulates the original request of TMDB API
+   - Provides methods such as movie search, getting movie details, getting cast and crew, and getting type list
+   - Called by other service classes, rarely used directly
 
 5. **TMDBMovieCacheService**
-   - 缓存TMDB API返回的热门电影列表
-   - 提供获取指定数量热门电影的方法
-   - 减少重复API调用，提高性能
+   - Caches the popular movie list returned by TMDB API
+   - Provides a method to get a specified number of popular movies
+   - Reduce repeated API calls and improve performance
 
-### 模型类及其使用
+### Model classes and their usage
 
 1. **Movie**
-   - 表示TMDB电影实体，包含ID、标题、类型ID等信息
-   - 是系统的核心数据模型，被各个服务广泛使用
+   - Represents TMDB movie entities, including information such as ID, title, genre ID, etc.
+   - Is the core data model of the system and is widely used by various services
 
 2. **MovieCredits**
-   - 表示电影的演职人员信息，包含演员和剧组成员列表
-   - 用于验证电影连接和胜利条件
-
+   - Represents the cast and crew information of a movie, including a list of actors and crew members
+   - Used to verify movie connections and victory conditions
 3. **Genre**
-   - 表示TMDB电影类型，包含ID和名称
-   - 用于电影类型匹配和胜利条件验证
+   - Represents TMDB movie genres, including ID and name
+   - Used for movie genre matching and victory condition verification
 
 4. **Connection**
-   - 表示两部电影之间的共通关系（演员、导演等）
-   - 用于游戏中记录和验证电影连接
+   - Represents the common relationship between two movies (actors, directors, etc.)
+   - Used to record and verify movie connections in the game
 
 5. **GameSession**
-   - 表示一局游戏会话
-   - 管理已使用的电影和连接，以及当前游戏状态
+   - Represents a game session
+   - Manages used movies and connections, as well as the current game status
 
 6. **WinCondition**
-   - 表示游戏胜利条件
-   - 包含条件类型、值和目标次数
+   - Indicates the game winning condition
+   - Contains the condition type, value and target number
 
-## 3. 系统架构UML图
+## 3. System architecture UML diagram
 
 ```mermaid
 classDiagram
-    %% 核心服务接口
+    %% Core service interface
     class MovieDataService {
         <<interface>>
         +getInitialMoviesList() List~Movie~
@@ -137,7 +136,7 @@ classDiagram
         +initializeDataIndexes() void
     }
     
-    %% 主要服务实现
+    %% Main service implementation
     class MovieDataServiceImpl {
         -static MovieDataServiceImpl instance
         +getInstance() MovieDataServiceImpl
@@ -158,7 +157,7 @@ classDiagram
         +hasGenre(int[], String) boolean
     }
     
-    %% TMDB API服务
+    %% TMDB API Service
     class TMDBApiService {
         +getMovieGenres() List~Genre~
         +searchMovies(String, int) List~Movie~
@@ -166,7 +165,7 @@ classDiagram
         +getMovieCredits(int) MovieCredits
     }
     
-    %% 主要模型类
+    %% Main model class
     class Movie {
         -int id
         -String title
@@ -185,7 +184,7 @@ classDiagram
         -String name
     }
     
-    %% 游戏核心模型
+    %% Game core model
     class GameSession {
         -Movie currentMovie
         -List~Movie~ usedMovies
@@ -209,21 +208,21 @@ classDiagram
         +isAchieved() boolean
     }
 
-    %% 核心关系
-    MovieDataService <|.. MovieDataServiceImpl : 实现
+    %% Core Relationships
+    MovieDataService <|.. MovieDataServiceImpl : accomplish
     
-    MovieDataServiceImpl --> MovieIndexService : 使用
-    MovieDataServiceImpl --> MovieGenreService : 使用
-    MovieDataServiceImpl --> GameSession : 管理
+    MovieDataServiceImpl --> MovieIndexService : use
+    MovieDataServiceImpl --> MovieGenreService : use
+    MovieDataServiceImpl --> GameSession : manage
     
-    MovieIndexService --> TMDBApiService : 调用
-    MovieGenreService --> TMDBApiService : 调用
+    MovieIndexService --> TMDBApiService : Call
+    MovieGenreService --> TMDBApiService : Call
     
-    Movie <-- TMDBApiService : 获取
-    MovieCredits <-- TMDBApiService : 获取
-    Genre <-- TMDBApiService : 获取
+    Movie <-- TMDBApiService : Get
+    MovieCredits <-- TMDBApiService : Get
+    Genre <-- TMDBApiService : Get
     
-    Connection --> Movie : 关联
-    GameSession --> Movie : 跟踪
-    GameSession --> Connection : 记录使用
+    Connection --> Movie : associate
+    GameSession --> Movie : track
+    GameSession --> Connection : Record usage
 ``` 
