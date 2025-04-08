@@ -44,7 +44,7 @@
    MovieDataService movieService = MovieDataServiceImpl.getInstance();
    
    // Search movies
-   List<Movie> results = movieService.searchMoviesByPrefix("星际");
+   List<Movie> results = movieService.searchMoviesByPrefix("interstellar");
    
    // Check movie connection
    boolean isValid = movieService.validateConnection(movie1, movie2);
@@ -77,7 +77,7 @@
    
    // Can also be used directly (not recommended)）
    MovieGenreService genreService = MovieGenreService.getInstance();
-   boolean hasAction = genreService.hasGenre(movie.getGenreIds(), "动作");
+   boolean hasAction = genreService.hasGenre(movie.getGenreIds(), "action");
    ```
 
 4. **TMDBApiService**
